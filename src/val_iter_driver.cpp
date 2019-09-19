@@ -7,9 +7,9 @@
 using namespace ADJZAI001_val_iter;
 using namespace std;
 
-// data structures used for value iteration algorithm
 int num_states;
 float discount_factor;
+int converge_count;
 vector<t_vect> T;  // transitions
 vector<float> V_n;   // values for states
 vector<float> V_np1;
@@ -54,16 +54,13 @@ void ADJZAI001_val_iter::load_model(std::string filename) {
 }
 
 float ADJZAI001_val_iter::bellman_value(int state) {
-    t_vect state_ts = T[state];
-    transition max_a = *max_element(state_ts.begin(), state_ts.end());
+    t_vect transitions = T[state];
+    transition max_a = *max_element(transitions.begin(), transitions.end());
 
-    float val = max_a.reward;
-    float sum = 0;
-    for (int j = 0; j < num_states; ++j) {
-        if (j != state)
-            sum += V_n[j];
-    }
-    val += discount_factor * sum;
+    float val = max_a.reward + (discount_factor * V_n[max_a.state]);
+
+    if (V_n[state] == val)  converge_count++;
+
     return val;
 }
 
@@ -81,9 +78,19 @@ int main(int argc, char const *argv[]) {
         V_n.resize(num_states, 0);
         V_np1.resize(num_states);
 
-        for (int i = 0; i < num_states; ++i) {
-            V_np1[i] = bellman_value(i);
-            cout << V_np1[i] << endl;
+        int iter = 1;
+
+        while (converge_count < num_states) {
+            converge_count = 0;
+            cout << "iteration " << iter << endl;
+
+            for (int i = 0; i < num_states; ++i) {
+                V_np1[i] = bellman_value(i);
+                cout << "V[" << i+1 << "] = " << V_np1[i] << endl;
+            }
+            V_n = V_np1;
+            iter++;
+            cout << endl;
         }
     }
     else {
