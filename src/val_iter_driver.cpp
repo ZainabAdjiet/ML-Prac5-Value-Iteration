@@ -8,9 +8,12 @@ using namespace ADJZAI001_val_iter;
 using namespace std;
 
 // data structures used for value iteration algorithm
-std::vector<t_vect> T;  // transitions
-std::vector<float> V;   // values for states
-std::vector<int> PI;    // optimal policy
+int num_states;
+float discount_factor;
+vector<t_vect> T;  // transitions
+vector<float> V_n;   // values for states
+vector<float> V_np1;
+vector<int> PI;    // optimal policy
 
 /****************************************************************/
 /* Value iteration Functions
@@ -19,13 +22,17 @@ std::vector<int> PI;    // optimal policy
 void ADJZAI001_val_iter::load_model(std::string filename) {
     ifstream file(filename);
     string line;
-    int num_states, state;
+    int state;
     float reward;
 
     if (file.is_open()) {
         getline(file, line);
-        istringstream iss(line);
-        iss >> num_states;
+        istringstream states(line);
+        states >> num_states;
+
+        getline(file, line);
+        istringstream discount(line);
+        discount >> discount_factor;
 
         for (int i = 0; i < num_states; ++i) {
             getline(file, line);
@@ -46,10 +53,19 @@ void ADJZAI001_val_iter::load_model(std::string filename) {
     }
 }
 
-// float ADJZAI001_val_iter::bellman_value(int state) {
-//     t_vect state_ts = transitions[state];
-//     transition max_a = *max_element(state_ts.begin(), state_ts.end());
-// }
+float ADJZAI001_val_iter::bellman_value(int state) {
+    t_vect state_ts = T[state];
+    transition max_a = *max_element(state_ts.begin(), state_ts.end());
+
+    float val = max_a.reward;
+    float sum = 0;
+    for (int j = 0; j < num_states; ++j) {
+        if (j != state)
+            sum += V_n[j];
+    }
+    val += discount_factor * sum;
+    return val;
+}
 
 /****************************************************************/
 /* Main Program
@@ -62,11 +78,12 @@ int main(int argc, char const *argv[]) {
         string input = string(argv[1]);
         load_model(input);
 
-        for (int i = 0; i < T.size(); ++i) {
-            cout << "state " << i+1 << endl;
-            for (int j = 0; j < T[i].size(); ++j) {
-                cout << "to " << T[i][j].state + 1 << " R: " << T[i][j].reward << endl;
-            }
+        V_n.resize(num_states, 0);
+        V_np1.resize(num_states);
+
+        for (int i = 0; i < num_states; ++i) {
+            V_np1[i] = bellman_value(i);
+            cout << V_np1[i] << endl;
         }
     }
     else {
