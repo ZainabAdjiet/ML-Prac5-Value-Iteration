@@ -6,8 +6,11 @@
 /****************************************************************/
 
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 /****************************************************************/
 /* Functions
@@ -16,18 +19,17 @@
 namespace ADJZAI001_val_iter {
 
     struct transition {
-        int state_num;
+        int state;
         float reward;
 
+        transition(int s, float r);
         bool operator<(transition other);
     };
 
-    // data structures used for value iteration algorithm
-    std::vector< std::vector<transition> > transitions;
-    std::vector<float> V;
-    std::vector<int> PI;
+    typedef std::vector<transition> t_vect;
 
     // value iteration methods
+    void load_model(std::string filename);
     float bellman_value(int state);
     int next_max_state(int state);
 }
