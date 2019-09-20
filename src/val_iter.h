@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <cmath>
 
 /****************************************************************/
 /* Functions
@@ -30,8 +31,9 @@ namespace ADJZAI001_val_iter {
 
     // value iteration methods
     void load_model(std::string filename);
-    float bellman_value(int state);
-    int next_max_state(int state);
+    int max_action(int state);
+    float bellman(int state);
+    int policy(int state);
 }
 
 #endif
