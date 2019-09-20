@@ -7,41 +7,47 @@
 using namespace ADJZAI001_val_iter;
 using namespace std;
 
-int num_states;
-float discount_factor;
-int converge_count;
+/****************************************************************/
+/* Transition Functions
+/****************************************************************/
 
-vector<int> terminal;
-vector<t_vect> T;  // transitions
-vector<float> V_n;   // values for states
-vector<float> V_np1;
-vector<int> PI;    // optimal policy
+transition::transition(int s, float r) : state(s), reward(r) {}
+
+bool transition::operator<(transition other) {
+    return this->reward < other.reward;
+}
 
 /****************************************************************/
 /* Value iteration Functions
 /****************************************************************/
 
+/*
+* loads the model states and action rewards from file
+*/
 void ADJZAI001_val_iter::load_model(std::string filename) {
     ifstream file(filename);
-    string line;
+    string line;    // hold line in file
     int state;
     float reward;
 
     if (file.is_open()) {
+        // get number of states
         getline(file, line);
         istringstream states(line);
         states >> num_states;
 
+        // get discount factor
         getline(file, line);
         istringstream discount(line);
         discount >> discount_factor;
 
+        // read action rewards in order of states
         for (int i = 0; i < num_states; ++i) {
             getline(file, line);
             istringstream temp(line);
 
             t_vect transitions;
-            bool self_transition = false;
+            bool self_transition = false; // to detect terminal state
 
             while (!temp.eof()) {
                 temp >> state;
@@ -51,44 +57,61 @@ void ADJZAI001_val_iter::load_model(std::string filename) {
                 transitions.push_back(transition(state-1, reward));
             }
 
+            // if terminal state, add to list of terminal states
             if (self_transition && transitions.size() == 1)
                 terminal.push_back(i);
+            // add transitions with rewards for state by index
             T.push_back(transitions);
         }
         file.close();
     }
 }
 
+/*
+* calculates V_{n+1} value using Bellman equation for given state
+*/
 float ADJZAI001_val_iter::bellman(int state) {
     t_vect transitions = T[state];
     float max_val = -1;
 
+    // get max value of all actions
     for (int j = 0; j < transitions.size(); ++j) {
         transition action = transitions[j];
         float val = action.reward + (discount_factor * V_n[action.state]);
         if (val > max_val)  max_val = val;
     }
 
-    if (abs(V_n[state] - max_val) < 0.00001)  converge_count++;
+    if (abs(V_n[state] - max_val) < 0.00001)  converge_count++; // used to detect convergence
 
     return max_val;
 }
 
+/*
+* returns the optimal policy for given state
+* optimal policy selected with precedence:
+* 1. State has higher value than current state and max value of all actions
+* 2. State is terminal
+* 3. State has lower value or equal value to current and max value of all actions
+*/
 int ADJZAI001_val_iter::policy(int state) {
     t_vect transitions = T[state];
     int max_state = -1;
     float val = -1;
-    bool found_higher_val = false;
-    bool found_terminal = false;
+    bool found_higher_val = false;  // detect if there is a higher value alternate path
+    bool found_terminal = false;    // detect if terminal state can be reached
 
     for (int j = 0; j < transitions.size(); ++j) {
         int state_t = transitions[j].state;
+        // if transition state is terminal and no higher value alternate path, go to terminal
         if (find(terminal.begin(), terminal.end(), state_t) != terminal.end()) {
             if (!found_higher_val) {
                 found_terminal = true;
                 max_state = state_t;
             }
         }
+        /* if transition state value is max so far, only take this path if
+        * terminal state cannot be reached from this state, or
+        * if a terminal state can be reached, only take path if it has higher value than current state */
         if (V_np1[state_t] > val) {
             if (V_np1[state_t] > V_np1[state])
                 found_higher_val = true;
@@ -114,27 +137,36 @@ int main(int argc, char const *argv[]) {
         string input = string(argv[1]);
         load_model(input);
 
+        // intialise state values to 0
         V_n.resize(num_states, 0);
         V_np1.resize(num_states);
 
-        int iter = 1;
+        int iter = 0;
 
+        // perform Bellman calculation for each state until convergence
         while (converge_count < num_states) {
+            iter++;
             converge_count = 0;
-            cout << "iteration " << iter << endl;
 
             for (int i = 0; i < num_states; ++i) {
                 V_np1[i] = bellman(i);
-                cout << "V[" << i+1 << "] = " << V_np1[i] << endl;
             }
             V_n = V_np1;
-            iter++;
-            cout << endl;
         }
 
+        // deduce optimal policy for each state with calculated values
         for (int i = 0; i < num_states; ++i) {
             PI.push_back(policy(i));
-            cout << "PI[" << i+1 << "] = " << PI[i] + 1 << endl;
+        }
+
+        // display output
+
+        cout << "Iterations to converge: " << iter << endl << endl;
+
+        cout << "Optimal values:" << endl;
+
+        for (int i = 0; i < num_states; ++i) {
+            cout << "V*[" << i+1 << "]  = " << V_np1[i] << endl;
         }
     }
     else {

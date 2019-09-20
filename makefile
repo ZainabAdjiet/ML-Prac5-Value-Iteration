@@ -19,7 +19,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	$(CC) $(FLAGS) $(INCLUDE) -c -o $@ $<
 
 run:
-	./val_iter
+	./val_iter input.txt
 	
 clean:
 	rm -rf $(OBJ_DIR)/* val_iter
