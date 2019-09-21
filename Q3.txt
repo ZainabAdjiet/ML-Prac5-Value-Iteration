@@ -1,0 +1,46 @@
+Number of states: 6
+Discount factor: 0.8
+Reward function and Available actions: 
+S1 -> S2 = 0
+S1 -> S4 = 0
+S2 -> S1 = 0
+S2 -> S3 = 80
+S2 -> S5 = 0
+S3 -> S3 = 0
+S4 -> S1 = 0
+S4 -> S5 = 0
+S5 -> S2 = 0
+S5 -> S4 = 0
+S5 -> S6 = 0
+S6 -> S3 = 160
+S6 -> S5 = 0
+
+Iterations to converge: 5
+
+Optimal values:
+V*[1] = 81.92
+V*[2] = 102.4
+V*[3] = 0
+V*[4] = 102.4
+V*[5] = 128
+V*[6] = 160
+
+Optimal policies:
+PI[1] = 2
+PI[2] = 5
+PI[3] = 3
+PI[4] = 5
+PI[5] = 6
+PI[6] = 3
+
+## Answer
+
+Observing the above example, it can be seen that the reward function for S2->S3 and S6->S3
+has been changed (using 'experiment_data.txt') which results in a change in V*.
+
+The optimal policy will remain the same, however, since the reward function has merely been doubled
+compared to the reward values given in the lab assignment, which results in a V* that almost mirrors
+the V* obtained from the lab assignment example. Thus, the optimal policy will remain the same.
+
+If the reward function for S2->S3 and S6->S3 both increase or decrease proportionally, this will result
+in the same policy being generated.

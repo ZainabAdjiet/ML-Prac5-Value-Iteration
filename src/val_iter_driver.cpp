@@ -31,7 +31,7 @@ bool ADJZAI001_val_iter::is_terminal(int state) {
 /*
 * loads the model states and action rewards from file
 */
-void ADJZAI001_val_iter::load_model(std::string filename) {
+bool ADJZAI001_val_iter::load_model(std::string filename) {
     ifstream file(filename);
     string line;    // hold line in file
     int state;
@@ -70,8 +70,14 @@ void ADJZAI001_val_iter::load_model(std::string filename) {
             // add transitions with rewards for state by index
             T.push_back(transitions);
         }
+
         file.close();
+        return true;
     }
+    else {
+        cout << "could not open " << filename << endl; 
+        return false;
+    }  
 }
 
 /*
@@ -142,81 +148,94 @@ int main(int argc, char const *argv[]) {
     if (argc > 2) {
 
         string input = string(argv[1]);
-        load_model(input);
+        string output = string(argv[2]);
+        if (!load_model(input))
+            return 0;
+        ofstream file_out(output);
 
-        // display model
+        if (file_out.is_open()) {
+            // display model
 
-        cout << "Number of states: " << num_states << endl;
-        cout << "Discount factor: " << discount_factor << endl;
-        cout << "Reward function and Available actions: " << endl;
-
-        for (int i = 0; i < num_states; ++i) {
-            t_vect transitions = T[i];
-            for (int j = 0; j < transitions.size(); ++j) {
-                cout << "S" << i+1 << " -> S" << transitions[j].state+1 << " = " << transitions[j].reward << endl;
-            }
-        }
-
-        // intialise state values to 0
-        V_n.resize(num_states, 0);
-        V_np1.resize(num_states);
-
-        int iter = 0;
-
-        // perform Bellman calculation for each state until convergence
-        while (converge_count < num_states) {
-            iter++;
-            converge_count = 0;
+            file_out << "Number of states: " << num_states << endl;
+            file_out << "Discount factor: " << discount_factor << endl;
+            file_out << "Reward function and Available actions: " << endl;
 
             for (int i = 0; i < num_states; ++i) {
-                V_np1[i] = bellman(i);
+                t_vect transitions = T[i];
+                for (int j = 0; j < transitions.size(); ++j) {
+                    file_out << "S" << i+1 << " -> S" << transitions[j].state+1 << " = " << transitions[j].reward << endl;
+                }
             }
-            V_n = V_np1;
-        }
 
-        // deduce optimal policy for each state with calculated values
-        for (int i = 0; i < num_states; ++i) {
-            PI.push_back(policy(i));
-        }
+            // intialise state values to 0
+            V_n.resize(num_states, 0);
+            V_np1.resize(num_states);
 
-        // display output
+            int iter = 0;
 
-        cout << endl << "Iterations to converge: " << iter << endl;
+            // perform Bellman calculation for each state until convergence
+            while (converge_count < num_states) {
+                iter++;
+                converge_count = 0;
 
-        cout  << endl << "Optimal values:" << endl;
-
-        for (int i = 0; i < num_states; ++i) {
-            cout << "V*[" << i+1 << "]  = " << V_np1[i] << endl;
-        }
-
-        if (argc == 4) {
-            int start;
-            istringstream st(argv[2]);
-            st >> start;
-
-            int end;
-            istringstream en(argv[3]);
-            en >> end;
-
-            start -= 1;
-            end -= 1;
-
-            if (is_terminal(end)) {
-                cout << endl << "Optimal policy for " << start+1 << " to " << end+1 << ": ";
-                int state = start;
-                do {
-                    cout << state+1 << " ";
-                    state = PI[state];
-                } while (state != end);
-                cout << end+1 << endl;
+                for (int i = 0; i < num_states; ++i) {
+                    V_np1[i] = bellman(i);
+                }
+                V_n = V_np1;
             }
-            else {
-                cout << endl << "end state needs to be a terminal state" << endl;
+
+            // deduce optimal policy for each state with calculated values
+            for (int i = 0; i < num_states; ++i) {
+                PI.push_back(policy(i));
             }
-            
+
+            // display output
+
+            file_out << endl << "Iterations to converge: " << iter << endl;
+
+            file_out  << endl << "Optimal values:" << endl;
+
+            for (int i = 0; i < num_states; ++i) {
+                file_out << "V*[" << i+1 << "] = " << V_np1[i] << endl;
+            }
+
+            file_out  << endl << "Optimal policies:" << endl;
+
+            for (int i = 0; i < num_states; ++i) {
+                file_out << "PI[" << i+1 << "] = " << PI[i]+1 << endl;
+            }
+
+            if (argc == 5) {
+                int start;
+                istringstream st(argv[3]);
+                st >> start;
+
+                int end;
+                istringstream en(argv[4]);
+                en >> end;
+
+                start -= 1;
+                end -= 1;
+
+                if (is_terminal(end)) {
+                    file_out << endl << "Optimal policy for " << start+1 << " to " << end+1 << ": ";
+                    int state = start;
+                    do {
+                        file_out << state+1 << " ";
+                        state = PI[state];
+                    } while (state != end);
+                    file_out << end+1 << endl;
+                }
+                else {
+                    cout << endl << "end state needs to be a terminal state" << endl;
+                }
+            }
+            else if (argc != 3 && argc != 5)
+                cout << "program call needs to be of format: val_iter [input file name] [output file name] <policy start state> <policy end state>" << endl;
         }
-        else if (argc != 2 && argc != 4)
-            cout << "program call needs to be of format: val_iter [input file name] [output file name] <policy start state> <policy end state>" << endl;
+        else {
+            cout << "could not write to " << output << endl;
+        }
     }
     else {
         cout << "program call needs to be of format: val_iter [input file name] [output file name] <policy start state> <policy end state>" << endl;

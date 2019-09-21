@@ -41,7 +41,7 @@ namespace ADJZAI001_val_iter {
 
     // value iteration methods
     bool is_terminal(int state);
-    void load_model(std::string filename);
+    bool load_model(std::string filename);
     int max_action(int state);
     float bellman(int state);
     int policy(int state);
