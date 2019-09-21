@@ -22,6 +22,13 @@ bool transition::operator<(transition other) {
 /****************************************************************/
 
 /*
+* returns if state is terminal state
+*/
+bool ADJZAI001_val_iter::is_terminal(int state) {
+    return find(terminal.begin(), terminal.end(), state) != terminal.end();
+}
+
+/*
 * loads the model states and action rewards from file
 */
 void ADJZAI001_val_iter::load_model(std::string filename) {
@@ -103,7 +110,7 @@ int ADJZAI001_val_iter::policy(int state) {
     for (int j = 0; j < transitions.size(); ++j) {
         int state_t = transitions[j].state;
         // if transition state is terminal and no higher value alternate path, go to terminal
-        if (find(terminal.begin(), terminal.end(), state_t) != terminal.end()) {
+        if (is_terminal(state_t)) {
             if (!found_higher_val) {
                 found_terminal = true;
                 max_state = state_t;
@@ -132,10 +139,23 @@ int ADJZAI001_val_iter::policy(int state) {
 
 int main(int argc, char const *argv[]) {
     
-    if (argc > 1) {
+    if (argc > 2) {
 
         string input = string(argv[1]);
         load_model(input);
+
+        // display model
+
+        cout << "Number of states: " << num_states << endl;
+        cout << "Discount factor: " << discount_factor << endl;
+        cout << "Reward function and Available actions: " << endl;
+
+        for (int i = 0; i < num_states; ++i) {
+            t_vect transitions = T[i];
+            for (int j = 0; j < transitions.size(); ++j) {
+                cout << "S" << i+1 << " -> S" << transitions[j].state+1 << " = " << transitions[j].reward << endl;
+            }
+        }
 
         // intialise state values to 0
         V_n.resize(num_states, 0);
@@ -161,13 +181,42 @@ int main(int argc, char const *argv[]) {
 
         // display output
 
-        cout << "Iterations to converge: " << iter << endl << endl;
+        cout << endl << "Iterations to converge: " << iter << endl;
 
-        cout << "Optimal values:" << endl;
+        cout  << endl << "Optimal values:" << endl;
 
         for (int i = 0; i < num_states; ++i) {
             cout << "V*[" << i+1 << "]  = " << V_np1[i] << endl;
         }
+
+        if (argc == 4) {
+            int start;
+            istringstream st(argv[2]);
+            st >> start;
+
+            int end;
+            istringstream en(argv[3]);
+            en >> end;
+
+            start -= 1;
+            end -= 1;
+
+            if (is_terminal(end)) {
+                cout << endl << "Optimal policy for " << start+1 << " to " << end+1 << ": ";
+                int state = start;
+                do {
+                    cout << state+1 << " ";
+                    state = PI[state];
+                } while (state != end);
+                cout << end+1 << endl;
+            }
+            else {
+                cout << endl << "end state needs to be a terminal state" << endl;
+            }
+            
+        }
+        else if (argc != 2 && argc != 4)
+            cout << "program call needs to be of format: val_iter [input file name] [output file name] <policy start state> <policy end state>" << endl;
     }
     else {
         cout << "program call needs to be of format: val_iter [input file name] [output file name] <policy start state> <policy end state>" << endl;
